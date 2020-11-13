@@ -11,9 +11,9 @@ int main(int argc, char* argv[]) {
 		exit(-1);
 	}
 	int path_length = strlen(argv[1]) + 1, encryption_key = atoi(argv[2]);
-	char* file_path = cut_string_revese(argv[1], path_length, '\\');
-	strcat_s(file_path, path_length + 20, "\\decrypted.txt");
-	create_output_file(file_path); 
-	free(file_path);
+	char* out_file_path = cut_string_revese(argv[1], path_length, '\\');
+	strcat_s(out_file_path, path_length + 20, "\\decrypted.txt");
+	decrypt_file(argv[1], encryption_key, out_file_path);
+	free(out_file_path);
 	printf("sucess");
 }
