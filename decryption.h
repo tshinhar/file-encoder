@@ -5,4 +5,5 @@ int write_to_file(HANDLE hFile, char* line);
 void decrypt_line(char* line, int key);
 int decrypt_file(char* input_file_path, int key, char* out_file_path);
 int read_from_file(HANDLE hFile, char* line);
+int check_hFile(HANDLE hFile, char* file_path);
 #pragma once
