@@ -1,5 +1,5 @@
-//Authors – Tomer Shinhar 205627524 Yael shwarz 206335010
-//Project – Caesar
+//Authors â€“ Tomer Shinhar 205627524 Yael shwarz 206335010
+//Project â€“ Caesar
 
 //Description - decryption of the file and creation of the output file
 
@@ -8,12 +8,12 @@
 #define BUFFERSIZE 60
 
 
-int decrypt_file(char *input_file_path, int key, char *out_file_path) {
+int decrypt_file(char* input_file_path, int key, char* out_file_path) {
     //thia function gets a file and a key and creates new decrypted file
     char line[BUFFERSIZE];
     HANDLE hFile_input = create_file(input_file_path, 'r');
     HANDLE hFile_output = create_file(out_file_path, 'w');
-    while (read_from_file(hFile_input, line) != EOF){
+    while (read_from_file(hFile_input, line) != EOF) {
         decrypt_line(line, key);
         write_to_file(hFile_output, line);
     }
@@ -24,13 +24,13 @@ int decrypt_file(char *input_file_path, int key, char *out_file_path) {
 
 void decrypt_line(char* line, int key) {
     // this function gets a line and decrypts it according to the given key
-    for (int i = 0; i < strlen(line); i++)
+    for (unsigned i = 0; i < strlen(line); i++)
     {
         if (isdigit(line[i]) > 0) //if char is digit
             line[i] = '0' + ((line[i] - '0' - key) % 10);
         else
             if (isalpha(line[i]) > 0) {// if char is alph
-                if(isupper(line[i]) > 0)
+                if (isupper(line[i]) > 0)
                     line[i] = 'A' + ((line[i] - 'A' - key) % 26);
                 else
                     line[i] = 'a' + ((line[i] - 'a' - key) % 26);
@@ -76,34 +76,44 @@ int write_to_file(HANDLE hFile, char* line) {
 }
 
 HANDLE create_file(char* file_path, char mode) {
-	// this function creates a file and returns the handle, mode is indicating read or write
+    // this function creates a file and returns the handle, mode is indicating read or write
     HANDLE hFile;
     DWORD dwDesiredAccess = 0;
     DWORD dwCreationDisposition = 0;
-    DWORD dwShareMode =0;
+    DWORD dwShareMode = 0;
     if (mode == 'r') {
-        dwDesiredAccess = GENERIC_READ;
-        dwCreationDisposition = OPEN_EXISTING;
-        dwShareMode = FILE_SHARE_READ;
+        hFile = CreateFileA(file_path, // name of the file
+            GENERIC_READ,           // open mode
+            FILE_SHARE_READ,            // share mode
+            NULL,                   // default security
+            OPEN_EXISTING,          // create/open
+            FILE_ATTRIBUTE_NORMAL,  // normal file
+            NULL);                  // no attr. template
+        if (check_hFile(hFile, file_path) == 1)
+            exit(-1);
+        return hFile;
     }
     else
         if (mode == 'w') {
-            dwDesiredAccess = GENERIC_WRITE;
-            dwCreationDisposition = CREATE_NEW;
-            dwShareMode = 0;
+            hFile = CreateFileA(file_path, // name of the file
+                GENERIC_WRITE,             // open mode
+                0,                         // share mode
+                NULL,                      // default security
+                CREATE_NEW,                // create/open
+                FILE_ATTRIBUTE_NORMAL,     // normal file
+                NULL);                     // no attr. template
+            if (check_hFile(hFile, file_path)==1)
+                exit(-1);
+            return hFile;
         }
-    hFile = CreateFileA(file_path, // name of the file
-        dwDesiredAccess,          // open mode
-        dwShareMode,             // share mode
-        NULL,                   // default security
-        dwCreationDisposition,  // create/open
-        FILE_ATTRIBUTE_NORMAL,  // normal file
-        NULL);                  // no attr. template
-    
-    if (hFile == INVALID_HANDLE_VALUE){
-        printf("ERROR: can't open file \"%s\"\n", file_path);
-        exit(-1);
-    }
+    printf("ERROR: not 'r' or 'w' file");
+}
 
-    return hFile;
+int check_hFile(HANDLE hFile, char* file_path)
+{
+    if (hFile == INVALID_HANDLE_VALUE) {
+        printf("ERROR: can't open file \"%s\"\n %u", file_path, GetLastError());
+        return 1;
+    }
+    return 0;
 }
