@@ -1,30 +1,38 @@
-//Authors â€“ Tomer Shinhar 205627524 Yael shwarz 206335010
-//Project â€“ Caesar
+//Authors – Tomer Shinhar 205627524 Yael shwarz 206335010
+//Project – Caesar
 
 //Description - decryption of the file and creation of the output file
 
 #include "decryption.h"
 
-#define BUFFERSIZE 60
-
 
 int decrypt_file(char* input_file_path, int key, char* out_file_path) {
-    //thia function gets a file and a key and creates new decrypted file
-    char line[BUFFERSIZE];
-    HANDLE hFile_input = create_file(input_file_path, 'r');
-    HANDLE hFile_output = create_file(out_file_path, 'w');
-    while (read_from_file(hFile_input, line) != EOF) {
-        decrypt_line(line, key);
-        write_to_file(hFile_output, line);
+    // Open the source file
+    HANDLE source = create_file(input_file_path, 'r');
+    printf("The source file is %s\n", input_file_path);
+
+    // Create a new file
+    HANDLE target = create_file(out_file_path, 'w');
+    printf("The target file is %s\n", out_file_path);
+
+    // Decrypt and copy to new file
+    int status = decrypt_source_to_target(source, target, key);
+    // Decryption completed, close handles
+    CloseHandle(source);
+    CloseHandle(target);
+
+    // Check for errors
+    if (status != 0) {
+        DeleteFileA(out_file_path);
+        return EXIT_FAILURE;
     }
-    CloseHandle(hFile_input);
-    CloseHandle(hFile_output);
+    // success
     return 0;
 }
 
-void decrypt_line(char* line, int key) {
+void decrypt_string(char* line, int key, int bytes_read) {
     // this function gets a line and decrypts it according to the given key
-    for (unsigned i = 0; i < strlen(line); i++)
+    for (int i = 0; i < bytes_read; i++)
     {
         if (isdigit(line[i]) > 0) //if char is digit
             line[i] = '0' + ((line[i] - '0' - key) % 10);
@@ -38,82 +46,61 @@ void decrypt_line(char* line, int key) {
     }
 }
 
-int read_from_file(HANDLE hFile, char* line) {
-    // this function reads from the given file
-    DWORD dwBytesRead;
-    OVERLAPPED ol = { 0 };
-    BOOL bResult = ReadFile(hFile, line, BUFFERSIZE - 1, &dwBytesRead, NULL);
-    if (FALSE == bResult)
-    {
-        printf("ERROR- can't read from file.\n GetLastError=%08x\n", GetLastError());
-        CloseHandle(hFile);
-        exit(1);
-    }
-    if (bResult && dwBytesRead == 0)
-    {
-        return EOF;
-    }
+
+int decrypt_source_to_target(HANDLE source, HANDLE target, int key) {
+    char buff[BUFFERSIZE];
+    DWORD dwBytesRead, dwBytesWritten;
+
+    // Copy contents
+    bool ok = true;
+    do {
+        // Read file, check for error
+        if (!ReadFile(source, buff, sizeof(buff), &dwBytesRead, NULL)) {
+            printf("Source file not read from. Error %u", GetLastError());
+            ok = false;
+            break;
+        }
+
+        // Check for EOF reached
+        if (dwBytesRead == 0) {
+            break;
+        }
+        // Send string to decryption 
+        decrypt_string(buff, key, (int)dwBytesRead);
+
+        // Write file, check for error
+        if (!WriteFile(target, buff, dwBytesRead, &dwBytesWritten, NULL)) {
+            printf("Target file not written to. Error %u", GetLastError());
+            ok = false;
+            break;
+        }
+    } while (true);
+    // Check errors
+    if (!ok) 
+        return EXIT_FAILURE;
     return 0;
 }
-int write_to_file(HANDLE hFile, char* line) {
-    // this function writes the given line to the given file
-    DWORD dwBytesToWrite = (DWORD)strlen(line);
-    DWORD dwBytesWritten = 0;
-    BOOL bErrorFlag = FALSE;
 
-    bErrorFlag = WriteFile(
-        hFile,           // open file handle
-        line,      // start of data to write
-        dwBytesToWrite,  // number of bytes to write
-        &dwBytesWritten, // number of bytes that were written
-        NULL);            // no overlapped structure
-
-    if (FALSE == bErrorFlag) {
-        printf("ERROR - can't write to file.\n");
-        return -1;
-    }
-    return 0;
-}
 
 HANDLE create_file(char* file_path, char mode) {
     // this function creates a file and returns the handle, mode is indicating read or write
     HANDLE hFile;
-    DWORD dwDesiredAccess = 0;
-    DWORD dwCreationDisposition = 0;
-    DWORD dwShareMode = 0;
     if (mode == 'r') {
-        hFile = CreateFileA(file_path, // name of the file
-            GENERIC_READ,           // open mode
-            FILE_SHARE_READ,            // share mode
-            NULL,                   // default security
-            OPEN_EXISTING,          // create/open
-            FILE_ATTRIBUTE_NORMAL,  // normal file
-            NULL);                  // no attr. template
-        if (check_hFile(hFile, file_path) == 1)
-            exit(-1);
-        return hFile;
+        hFile = CreateFileA(file_path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     }
     else
         if (mode == 'w') {
-            hFile = CreateFileA(file_path, // name of the file
-                GENERIC_WRITE,             // open mode
-                0,                         // share mode
-                NULL,                      // default security
-                CREATE_NEW,                // create/open
-                FILE_ATTRIBUTE_NORMAL,     // normal file
-                NULL);                     // no attr. template
-            if (check_hFile(hFile, file_path)==1)
-                exit(-1);
-            return hFile;
+            hFile = CreateFileA(file_path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
         }
-    printf("ERROR: not 'r' or 'w' file");
-}
-
-int check_hFile(HANDLE hFile, char* file_path)
-{
-    if (hFile == INVALID_HANDLE_VALUE) {
-        printf("ERROR: can't open file \"%s\"\n %u", file_path, GetLastError());
-        return 1;
+    else {
+        printf("ERROR: not 'r' or 'w' for file");
+        return NULL;
     }
-    return 0;
+
+    // Check for error
+    if (hFile == INVALID_HANDLE_VALUE) {
+        printf("Target file not created. Error %u", GetLastError());
+        exit(EXIT_FAILURE);
+    }
+    return hFile;
 }
