@@ -6,7 +6,10 @@
 #include "decryption.h"
 
 
-int decrypt_file(char* input_file_path, int key, char* out_file_path) {
+/// a function to start the threads should be implemented here
+/// support functions may be needed as well since we need to set the start and end point for each thread
+
+int decrypt_file(char* input_file_path, int key, char* out_file_path, char flag) {
     // Open the source file
     HANDLE source = create_file(input_file_path, 'r');
     printf("The source file is %s\n", input_file_path);
@@ -16,7 +19,7 @@ int decrypt_file(char* input_file_path, int key, char* out_file_path) {
     printf("The target file is %s\n", out_file_path);
 
     // Decrypt and copy to new file
-    int status = decrypt_source_to_target(source, target, key);
+    int status = decrypt_source_to_target(source, target, key, flag);
     // Decryption completed, close handles
     CloseHandle(source);
     CloseHandle(target);
@@ -47,7 +50,24 @@ void decrypt_string(char* line, int key, int bytes_read) {
 }
 
 
-int decrypt_source_to_target(HANDLE source, HANDLE target, int key) {
+void encrypt_string(char* line, int key, int bytes_read) {
+    // this function gets a line and encrypts it according to the given key
+    for (int i = 0; i < bytes_read; i++)
+    {
+        if (isdigit(line[i]) > 0) //if char is digit
+            line[i] = '0' + ((line[i] - '0' + key) % 10);
+        else
+            if (isalpha(line[i]) > 0) {// if char is alph
+                if (isupper(line[i]) > 0)
+                    line[i] = 'A' + ((line[i] - 'A' + key) % 26);
+                else
+                    line[i] = 'a' + ((line[i] - 'a' + key) % 26);
+            }
+    }
+}
+
+
+int decrypt_source_to_target(HANDLE source, HANDLE target, int key, char flag) {
     char buff[BUFFERSIZE];
     DWORD dwBytesRead, dwBytesWritten;
 
@@ -65,8 +85,11 @@ int decrypt_source_to_target(HANDLE source, HANDLE target, int key) {
         if (dwBytesRead == 0) {
             break;
         }
-        // Send string to decryption 
-        decrypt_string(buff, key, (int)dwBytesRead);
+        // Send string to decryption or encryption
+        if(flag == 'd')
+            decrypt_string(buff, key, (int)dwBytesRead);
+        else
+            encrypt_string(buff, key, (int)dwBytesRead);
 
         // Write file, check for error
         if (!WriteFile(target, buff, dwBytesRead, &dwBytesWritten, NULL)) {

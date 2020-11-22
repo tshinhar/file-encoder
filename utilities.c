@@ -28,3 +28,22 @@ void check_malloc(const void* pointer) {
 		exit(EXIT_FAILURE);
 	}
 }
+
+
+int get_num_of_lines_in_file(char* file_path)
+{
+	FILE* file_pointer = NULL;
+	if (fopen_s(&file_pointer, file_path, "r") != 0)
+	{
+		printf("couldn't read file");
+		exit(EXIT_FAILURE);
+	}
+	char current_char;
+	int lines_count = 0;
+	while ((current_char = (char)fgetc(file_pointer)) != EOF){
+		if (current_char == '\n')
+			lines_count++;
+	}
+	fclose(file_pointer);
+	return lines_count;
+}
