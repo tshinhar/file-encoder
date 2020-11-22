@@ -10,4 +10,5 @@
 
 void check_malloc(const void* pointer);
 char* cut_string_revese(char* string, int string_lenght, char cutting_point);
+int get_num_of_lines_in_file(char* file_path);
 #pragma once
