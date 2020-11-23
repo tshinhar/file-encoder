@@ -109,11 +109,11 @@ HANDLE create_file(char* file_path, char mode) {
     // this function creates a file and returns the handle, mode is indicating read or write
     HANDLE hFile;
     if (mode == 'r') {
-        hFile = CreateFileA(file_path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        hFile = CreateFileA(file_path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     }
     else
         if (mode == 'w') {
-            hFile = CreateFileA(file_path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+            hFile = CreateFileA(file_path, GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
         }
     else {
         printf("ERROR: not 'r' or 'w' for file");
