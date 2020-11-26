@@ -1,5 +1,5 @@
-//Authors – Tomer Shinhar 205627524 Yael shwarz 206335010
-//Project – Caesar
+//Authors â€“ Tomer Shinhar 205627524 Yael schwartz 206335010
+//Project â€“ Caesar
 
 //Description - decryption of the file and creation of the output file
 
@@ -9,7 +9,7 @@
 /// a function to start the threads should be implemented here
 /// support functions may be needed as well since we need to set the start and end point for each thread
 
-int decrypt_file(char* input_file_path, int key, char* out_file_path, char flag) {
+int decrypt_file(char* input_file_path, int key, char* out_file_path, int first_byte, int last_byte, char flag) {
     // Open the source file
     HANDLE source = create_file(input_file_path, 'r');
     printf("The source file is %s\n", input_file_path);
@@ -19,7 +19,7 @@ int decrypt_file(char* input_file_path, int key, char* out_file_path, char flag)
     printf("The target file is %s\n", out_file_path);
 
     // Decrypt and copy to new file
-    int status = decrypt_source_to_target(source, target, key, flag);
+    int status = decrypt_source_to_target(source, target, first_byte, last_byte, key, flag);
     // Decryption completed, close handles
     CloseHandle(source);
     CloseHandle(target);
@@ -67,7 +67,7 @@ void encrypt_string(char* line, int key, int bytes_read) {
 }
 
 
-int decrypt_source_to_target(HANDLE source, HANDLE target, int key, char flag) {
+int decrypt_source_to_target(HANDLE source, HANDLE target, int first_byte, int last_byte, int key, char flag) {//update the funtion for the addition of first_byte last_byte
     char buff[BUFFERSIZE];
     DWORD dwBytesRead, dwBytesWritten;
 
@@ -86,7 +86,7 @@ int decrypt_source_to_target(HANDLE source, HANDLE target, int key, char flag) {
             break;
         }
         // Send string to decryption or encryption
-        if(flag == 'd')
+        if (flag == 'd')
             decrypt_string(buff, key, (int)dwBytesRead);
         else
             encrypt_string(buff, key, (int)dwBytesRead);
@@ -99,7 +99,7 @@ int decrypt_source_to_target(HANDLE source, HANDLE target, int key, char flag) {
         }
     } while (true);
     // Check errors
-    if (!ok) 
+    if (!ok)
         return EXIT_FAILURE;
     return 0;
 }
@@ -115,10 +115,10 @@ HANDLE create_file(char* file_path, char mode) {
         if (mode == 'w') {
             hFile = CreateFileA(file_path, GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
         }
-    else {
-        printf("ERROR: not 'r' or 'w' for file");
-        return NULL;
-    }
+        else {
+            printf("ERROR: not 'r' or 'w' for file");
+            return NULL;
+        }
 
     // Check for error
     if (hFile == INVALID_HANDLE_VALUE) {
